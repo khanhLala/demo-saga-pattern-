@@ -1,5 +1,6 @@
 # Hướng Dẫn Chạy Demo Orchestration Pattern
-
+(yêu cầu chạy code init.sql trong mysql trước, nên tạo thêm một vài record trong bảng inventory)
+edit username và password của MySQL trong file application.yaml trong cả 3 service phù hợp với password của mình
 ### Chạy 3 Services
 Bật các terminal riêng biệt cho mỗi service và chạy lệnh (hoặc Run trong IDE):
 
