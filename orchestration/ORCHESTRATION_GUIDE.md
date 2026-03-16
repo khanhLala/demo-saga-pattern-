@@ -1,14 +1,6 @@
 # Hướng Dẫn Chạy Demo Orchestration Pattern
 
-Sau khi refactor từ Choreography sang Orchestration, luồng hoạt động đã thay đổi từ Event-based (Kafka) sang Command-based (REST synchronous).
-
-### Bước 1: Khởi động Database (MySQL tại máy cục bộ)
-Vì bạn dùng MySQL cài trực tiếp trên máy, hãy đảm bảo:
-1. MySQL đang chạy tại `localhost:3306`.
-2. Chạy nội dung file `init.sql` (nằm ở thư mục gốc) trong MySQL Workbench hoặc Command Line để tạo dữ liệu mẫu và các database cần thiết.
-3. Kiểm tra user/password trong các file `application.yaml` có khớp với máy của bạn không (mặc định tôi đang để user: `choreography` / pass: `1234`).
-
-### Bước 2: Chạy 3 Services
+### Chạy 3 Services
 Bật các terminal riêng biệt cho mỗi service và chạy lệnh (hoặc Run trong IDE):
 
 - **Order Service (Orchestrator - Port 8081)**:
@@ -27,7 +19,7 @@ Bật các terminal riêng biệt cho mỗi service và chạy lệnh (hoặc Ru
   mvn spring-boot:run
   ```
 
-### Bước 3: Kiểm tra luồng hoạt động
+### Kiểm tra luồng hoạt động
 
 #### 1. Luồng Thành Công
 Gửi yêu cầu tạo đơn hàng bình thường:
