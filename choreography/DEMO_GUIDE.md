@@ -1,5 +1,6 @@
 # Hướng Dẫn Từng Bước Chạy Demo (Choreography Pattern)
-
+(yêu cầu chạy code init.sql trong mysql trước, nên tạo thêm một vài record trong bảng inventory)
+edit username và password của MySQL trong file application.yaml trong cả 3 service phù hợp với password của mình
 ### Bước 1: Khởi động Kafka & Zookeeper
 ```bash
 docker-compose up -d
