@@ -1,0 +1,28 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/orderdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: choreography
+    password: '1234'
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: order-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: "com.example.payment.event.PaymentBilledEvent:com.example.order.event.PaymentBilledEvent,com.example.payment.event.PaymentFailedEvent:com.example.order.event.PaymentFailedEvent,com.example.inventory.event.InventoryFailedEvent:com.example.order.event.InventoryFailedEvent,com.example.inventory.event.InventoryReservedEvent:com.example.order.event.InventoryReservedEvent"

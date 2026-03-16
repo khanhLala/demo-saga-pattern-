@@ -1,0 +1,564 @@
+(Phần gạch chân là phần ý chính 
+để vào slide)
+1
+. 
+Bối cảnh ra đời của Saga Pattern
+Slide 1: 
+1.1 
+Transation trong kiến trúc Monolithic
+- 
+Trong kiến trúc Monolithic,
+ tất cả các logic nghiệp vụ đều nằm trong 1 ứng dụng và dùng chung 1 database duy nhất
+- 
+Một transaction
+ trong monolithic luôn đảm bảo ACID:
+ (yêu cầu hình ảnh trong slide)
+A: Atomicity: tính nguyên tử:
+ một transation gồm các bước nhỏ, là một khối thống nhất không thể tách rời, 
+các bước phải được thực hiện cùng nhau, nếu 1 bước lỗi thì transaction không được thực hiện
+ và dữ liệu trong DB phải nguyên vẹn như khi chưa thực hiện.
+C: Consistency: tính nhất quán:
+ dữ liệu luôn phải tuân thủ các quy tắc đã quy định trước. Dữ liệu trước và sau thực hiện transaction đều phải hợp lệ theo các quy tắc này
+. VD: khi chuyển tiền mà sau giao dịch số tiền âm =&gt; không hợp lệ, transaction bị hủy
+I: Iso
+lation: tính cô lập:
+ nhiều transaction chạy song song không làm ảnh hưởng lẫn nhau
+. Ví dụ: Cùng 1 tài khoản có 2 người rút tiền cùng lúc =&gt; người thực hiện trước thì transaction được xử lý trước, người còn lại phải đợi transaction
+ trước xong mới được tiếp tục xử lý
+D: Durability: tính bền vững
+:
+ sau khi transaction thành công thì dữ liệu được lưu lại vĩnh viễn vào ổ cứng. Dù có bất kỳ sự cố nào xảy ra thì dữ liệu này vẫn phải bảo đảm nguyên vẹn hoặc có thể backup lại được.
+- 
+Transaction trong mô hình monolithic 
+luôn bảo đảm dữ liệu được nhất quán
+ rất mạnh (strong consitency)
+, nếu chỉ có một bước nào đó trong transaction bị lỗi thì tất cả sẽ được rollback tự động
+End slide 1
+Slide 2: 
+1.2 
+Transaction trong kiến trúc microservices
+- 
+Trong kiến trúc microservices, 
+mỗi yêu cầu (request)
+ thường đi qua nhiều service khác nhau, mỗi service có DB riêng
+, nghĩa là request đi đến service A, service A thực hiện thành công, lưu vào DB của A rồi mới tiếp tục thực hiện service B. 
+(yêu cầu hình ảnh sơ đồ kiểu: service A có DB A, service B có DB B…)
+- 
+Tính nguyên tử (atomicity)
+, tính nhất quán (consistency)
+ và tính cô lập (
+isolation)  bị
+ phá vỡ
+:
+Tính nguyên tử bị phá vỡ: 
+Khi một hành động thực hiện nhưng gặp lỗi
+, ví dụ: 
+service A thực hiện thành 
+công =&gt; DB của A lưu dữ liệu, nhưng đến service B bị lỗi
+ thì DB của A không tự động rollback lại dữ liệu
+ như ban đầu
+ được.
+ 
+Tính nhất quán bị phá vỡ
+, nhưng từ nhất quán mạnh trở thành nhất quán cuối cùng
+: Service A thực hiện xong hành động, lưu vào DB của A, 
+dữ liệu đã thay đổi mặc dù chuỗi transaction chưa thực hiện xong
+ 
+Tính cô lập bị phá vỡ: giữa thời gian các service thực hiện, có khoảng thời gian trống. 
+Người dùng có thể nhìn thấy dữ liệu sau khi service A thành công mặc dù khi đó toàn bộ hành động chưa thực hiện thành công
+ =&gt; dữ liệu 
+sẽ bị lệch trong một khoảng thời gian dù rất ngắn
+=&gt; 
+Giải pháp:
+- 
+Chấp nhận 
+dữ liệu 
+chỉ có sự
+ nhất quán cuối cùng
+ (eventu
+al consistency)
+: dữ liệu có thể bị lệch trong một khoảng thời gian ngắn, nhưng cuối cùng thì dữ liệu vẫn phải chính xác.
+- 
+Sử dụng Saga Pattern
+End Slide 2
+Slide 3
++4
+: 1.3 Saga Pattern
+Slide 3
+Saga Pattern là một mẫu/ thiết kế dùng 
+để đảm bảo tính nhất quán dữ liệu trong kiến trúc Microservices
+. Nó 
+chia một transaction lớn thành các transactions nhỏ nối tiếp nhau
+. 
+Saga Pattern vận hành theo công thức
+ 
+(P 
+đọc là Process khi thuyết trình)
+ 
+P
+1
+ 
+ P
+2
+ 
+ 
+… 
+ P
+n
+, với Pi (1
+ 
+&lt;
+ i 
+n
+)
+Khi xảy ra lỗi
+, do không thể rollback như monolithic, 
+nó sẽ chạy những transaction
+s
+ theo ý nghĩa bù trừ các 
+transactions đã thực hiện
+, ví dụ lỗi ở P
+k
+ thì nó sẽ chạy P
+k 
+ P
+k-1
+ 
+….P
+1
+ 
+End slide 3
+Slide 4
+Ví dụ: 
+Transaction lớn gồm 3 service 
+Order, Inventory và Payment
+Luồng bình thường: Order tạo order 
+ Inventory kiểm tra và trừ kho 
+ Payment thanh toán
+ thành công
+Luồng lỗi: Order tạo order 
+ Inventory kiểm tra và trừ kho 
+ Payment thanh toán
+, gặp lỗi 
+ Inventory hoàn lại số lượng của kho 
+ Order cập nhật trạng thái thất bại
+End slide 
+4
+2. Orches
+tration
+ Pattern
+Slide 5
+: Orchestration Pattern
+Orchest
+ration Pattern là một dạng mẫu thiết kế phân tán
+, trong đó 
+có một thành phần điều phối (orchestrat
+or
+)
+. 
+Nó 
+nắm giữ kịch bản triển khai 
+một hoạt động, bao gồm các bước và thứ tự thực hiện trong luồng hoạt động, 
+cách xử lý bù (compensation) nếu xảy ra lỗi
+. 
+Thông thường service khởi tạo quy trình sẽ được chọn làm orchestrator
+Thành phần tham gia: Các services
+. Các services này không biế
+t và cũng không cần biết bản thân đang nằm trong quy trình nào. Chúng chỉ cần nhận lệnh
+, làm và báo cáo lại kết quả.
+Cơ chế: Command 
+based
+. 
+Orchestrator 
+gửi lệnh đến các service,
+ các service xử lý
+ sau đó gửi reply về orchestrator
+End slide 5
+Slide 6
+: Luồng hoạt động bình thường
+ (yêu cầu vẽ workflow
+ trích xuất san ảnh 
+cho đẹp và đủ thông tin
+ 
+để cho vào slide
+)
+Ví dụ luồng hoạt động với 3 service: Order, Inventory và Payment
+, 
+xét 
+hoạt động tạo đơn hàng và thanh toán. 
+Chọn OrderService là 
+Orchestrator
+(ảnh workflow 1)
+Bước 1: Client tạo Order
+ 
+ OrderService lưu order mới 
+(POST/
+order/create) với status là PENDING. Gán
+ transactionId là
+ id cho workflow này
+Bước 2: 
+Orchestrator
+ (chính là OrderService)
+ gọi InventoryService
+ 
+(POST/inventory/reserve)
+, truyền theo transactionId và thông tin order, product và số lượng. InventoryService sẽ kiểm tra số lượng và trừ đi trong kho
+ (nếu đủ)
+, gửi lại 
+phản hồi cho Orchestrator
+Bước 3: 
+Orchestrator nhận phản hồi từ InventoryService, sau đó 
+Orchestrator gọi PaymentService
+ (POST/payment/charge)
+, truyền theo transactionId, thông tin order và thanh toán
+, 
+nếu thành công, thực hiện lưu payment record vào DB
+, sau đó reply orchestrator trạng thái payment
+Bước 4: 
+Orchestrator nhận phản hồi từ PaymentService
+, sau đó 
+sửa trạng thái
+ của order từ
+ PENDING thành DONE
+ (Orchestrator không cần gọi đến OrderService
+ do OrderService chính là Orchestrator)
+. Truyền theo paymentId, transactionId và orderId
+ 
+Hết Slide 6
+Slide 7: Luồng hoạt động lỗi
+(ảnh workflow 2)
+ Lỗi ở bước kiểm tra kho
+Bước 1, 2 tương tự như quy trình chuẩn
+Bước 3: Orchestrator
+ nhận phản hồi từ InventoryService
+ sau đó
+ sửa trạng thái PENDING thành 
+FAILED
+. Truyền theo transactionId và orderId
+(ảnh workflow 3, có thể để ở slide thứ 8) Lỗi ở bước Payment
+Bước 1,2,3 tương tự như quy trình chuẩn
+Bước 4: 
+Orchestrator nhận phản hồi từ PaymentService, sau đó gọi 
+InventoryService (POST/inventory/re
+fund
+)
+.
+ Truyền theo transactionId và orderId để tìm ra lần trừ kho tương ứng, sau đó 
+trả lại số lượng về kho theo số lượng đã trừ trương ứng rồi gửi reply đến Orchestrator
+Bước 5: Orchestrator nhận reply 
+từ InventoryService
+, sau đó cập nhật trạng thái order từ PENDING thành FAILED
+Hết slide 7
+Một số lưu ý khi triển khai
+Orchestration cần lưu trạng thái saga (id, bước/trạng thái hiện tại) để có thể 
+resume khi gặp lỗi và truy vết
+ lịch sử hành động, đồng thời kiểm tra transactionId khi thực hiện ở mỗi service để tránh trùng lặp
+Phân biệt lỗi cần rollback/retry: 
+Retry thực hiện với các
+ request gặp
+ lỗi tạm thời như lỗi về mạng hoặc service unavailable. 
+Nếu sau nhiều lần retry không được thì phải lưu lại các request này.
+V
+ới những lỗi nằm trong luồng nghiệp vụ, ví dụ như 
+refund inventory nếu payment lỗi thì việc rollback là cần thiết, nhưng 
+với những lỗi như khi gửi thông báo cho người dùng về việc order thành công hay thất bại 
+thì đây là lỗi không cần rollback, chỉ cần ghi lại lỗi và retry.
+Slide 
+8: Ưu và nhược điểm
+ (cho hết vào slide)
+Ưu điểm
+Luồng nghiệp vụ được kiểm soát tập trung tại orchestrator =&gt; dễ quan sát, 
+triển khai, 
+kiểm tra, truy vấn và debug
+Phù hợp với những nghiệp vụ phức tạp, cần kiểm soát chặt chẽ các điều kiện
+Nhược điểm
+Biến orchestrator thành điểm tập trung xử lý logic, làm nó trở nên phức tạp khi số services tăng cao hoặc luồng nghiệp vụ dài
+Gây ra sự phụ thuộc 
+(coupling) giữa orchestrator và các service
+3. Choreography
+ Pattern
+Slide 
+9
+: Chorepgraphy
+ Pattern
+Choreography Pattern 
+là một mẫu thiết kế phân tán k
+hông có 
+orchestrator
+ trung tâm. 
+Cơ chế: Event based:
+ dựa trên sự kiện. 
+C
+ác services giao tiếp với nhau thông qua events qua message broker
+ như Kafka hay RabbitMQ
+. Trong message broker, mỗi serivce sẽ có 
+một topic riêng để 
+publish (gửi) sự kiện lên
+. Các services cũng lắng nghe sự kiện t
+ừ những topics của các services khác
+. Mỗi service publish event khi hoàn thành nhiệm vụ, các service khác subscribe và tiếp tục workflow.
+ 
+Slide 10: 
+Luồng hoạt động bình thường
+Bước 1: Khởi tạo &amp; Phát sóng (Publish)
+Hành động:
+ Khách hàng gọi API POST /orders. OrderService tiếp nhận, lưu đơn hàng vào Database với trạng thái PENDING và sinh ra một correlationId (Mã truy vết, ví dụ: #123).
+Sự kiện (Event):
+ OrderService đóng gói một gói tin có tên là 
+OrderCreatedEvent
+ (Sự kiện Đơn hàng đã được tạo), đính kèm #123 và danh sách món hàng. Nó ném sự kiện này lên Topic order-events.
+Lúc này, OrderService đi làm việc khác, không chờ đợi ai cả.
+Bước 2: Phản ứng dây chuyền 1 (Kho vào việc)
+Lắng nghe:
+ InventoryService vốn đang "cắm tai nghe" ở Topic order-events. Nó bắt được gói tin OrderCreatedEvent.
+Hành động:
+ Nó đọc data, chui vào Database của nó để trừ số lượng sản phẩm.
+Sự kiện (Event):
+ Trừ kho thành công, InventoryService ném một gói tin 
+InventoryReservedEvent
+ (Sự kiện Kho đã giữ hàng) lên Topic inventory-events.
+Bước 3: Phản ứng dây chuyền 2 (Tiền vào việc)
+Lắng nghe:
+ PaymentService đang theo dõi Topic inventory-events. Nó tóm được gói tin InventoryReservedEvent. (Nó tự hiểu logic: "À, kho đã có hàng rồi thì mình mới được phép trừ tiền").
+Hành động:
+ Nó kết nối với cổng thanh toán, trừ tiền trong thẻ của khách.
+Sự kiện (Event):
+ Trừ tiền thành công, nó ném gói tin 
+PaymentBilledEvent
+ (Sự kiện Đã thu tiền) lên Topic payment-events.
+Bước 4: Vòng lặp khép kín (Chốt đơn)
+Lắng nghe:
+ Xuyên suốt quá trình, OrderService vẫn luôn vểnh tai nghe ở Topic payment-events. Nó bắt được sự kiện PaymentBilledEvent mang mã #123.
+Hành động:
+ Nó truy vấn DB của nhà nó, tìm đúng đơn #123 và cập nhật trạng thái từ PENDING sang COMPLETED. Luồng kết thúc viên mãn.
+Ví dụ thực tế:
+ Giống hệt một dây chuyền lắp ráp ô tô. Anh thợ làm khung (Order) làm xong, đẩy cái khung trôi trên băng chuyền (Kafka). Anh thợ lắp bánh xe (Inventory) thấy cái khung trôi tới thì tự động lấy bánh lắp vào, rồi đẩy tiếp đi. Không có ông quản đốc nào đứng giữa gào thét chỉ đạo cả, mọi thứ tự động khớp nối bằng hiện vật trôi trên băng chuyền.
+Tầng 3: Chi tiết Luồng Lỗi &amp; Bù trừ (Compensation Path)
+Sức mạnh thực sự của Choreography nằm ở cách nó xử lý sự cố. Hãy xem 
+"Hiệu ứng Domino ngược"
+ diễn ra thế nào khi thẻ khách hàng hết tiền:
+Bước 1 &amp; Bước 2:
+ Diễn ra bình thường như trên. Kho đã giữ hàng và bắn ra InventoryReservedEvent.
+Bước 3: Sự cố xảy ra
+Lắng nghe &amp; Hành động:
+ PaymentService tóm được event giữ hàng, tiến hành trừ tiền. Nhưng cổng thanh toán báo "Không đủ số dư".
+Sự kiện Báo lỗi:
+ Thay vì bắn luồng thành công, PaymentService ném ra một gói tin 
+PaymentFailedEvent
+ (Sự kiện Thanh toán thất bại) lên Topic payment-events.
+Bước 4: Domino bù trừ (Hoạt động song song)
+ Khi sự kiện lỗi được phát lên loa phường, những ai có liên quan sẽ tự động dọn dẹp hậu quả của mình:
+Tại nhà Kho:
+ InventoryService (cũng đang nghe Topic payment-events để xử lý ngoại lệ) tóm được PaymentFailedEvent. Nó tra mã #123, lôi hàng đã giữ ra cộng ngược lại vào kệ (Hoàn kho).
+Tại nhà Đơn hàng:
+ OrderService bắt được PaymentFailedEvent. Nó tra DB, đổi đơn #123 từ PENDING sang FAILED.
+Slide 11: Luồng hoạt động lỗi
+Slide 12: Ưu và nhược điểm của chorephraphy pattern
+Slide 13: So sánh Orchestration Pattern và Choreography Pattern
+End slide 12
+4. So sánh và lựa chọn các 
+mẫu th
+iết
+ kế
+- Với 
+Monolithic: có độ phức tạp thấp
+, dễ debug, tuy nhiên khó mở rộng và sự phụ thuộc cao giữa các module, do đó
+ 
+sử dụng với hệ thống nhỏ, không quá nhiều người dùng, yêu cầu tốc độ phát triển nhanh, không có nhiều nhu cầu mở rộng (scale) phức tạp
+- Với 
+Orchestration: 
+độ phức tạp trung bình, khả năng debug và scale trung bình
+, độ phụ thuộc giữa các module trung bình, do đó có thể 
+sử dụng khi cần 
+kiểm soát luồng nghiệp vụ rõ ràng, khi logic xử lý nghiệp vụ phức tạp với nhiều điều kiện phân nhánh
+- Với Choreograph
+y
+: độ phức tạp cao, khó debug
+, dễ 
+mở rộng, độ phụ thuộc giữa các module thấp, 
+do đó phù hợp với hệ thống 
+cần giảm sự phụ thuộc tối đa, cần scale mở rộng độc lập từng service
+.
+02/07/2004 âm giờ Mùi 
+An
+ 12 giáp:  Tý – Sửu - … - Hợi theo thứ tự 12 con giáp 
+và cố định trong lá số như 
+dưới đây
+<w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="0" w:type="auto"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2254"/><w:gridCol w:w="2254"/><w:gridCol w:w="2254"/><w:gridCol w:w="2254"/></w:tblGrid><w:tr w:rsidR="007045CD" w14:paraId="46AF6BC6" w14:textId="77777777" w:rsidTr="007045CD"><w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="46A8DA36" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00BB5BD0" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Cự Môn
+QUAN LỘC
+Tỵ
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="3705BB3D" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00201B2A" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Thiên Tướng
+Liêm Trinh
+NÔ BỘC
+Ngọ
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="2AE4A5B1" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00D559DA" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Thiên Lương
+THIÊN DI
+Mùi
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="44FBE1A7" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00BE62CE" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Thất Sát
+TẬT ÁCH
+Thân
+<w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="7E851A85" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00BE62CE" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Tham Lang
+ĐIỀN TRẠCH
+Thìn
+<w:tcPr><w:tcW w:w="4508" w:type="dxa"/><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr><w:p w14:paraId="401B682A" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="007045CD" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="5927F0F0" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00BC5E9F" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Thiên Đồng
+TÀI BẠC
+H
+Dậu
+<w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="7F43B0B9" w14:textId="1286BEDE" w:rsidR="00143B7D" w:rsidRPr="004A0C29" w:rsidRDefault="00250B4B" w:rsidP="00143B7D"><w:pPr><w:jc w:val="center"/></w:pPr><w:r w:rsidRPr="004A0C29"><w:t>Thái Âm
+PHÚC &lt;THÂN&gt;
+Mão
+<w:tcPr><w:tcW w:w="4508" w:type="dxa"/><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p w14:paraId="04301BEB" w14:textId="77777777" w:rsidR="007045CD" w:rsidRPr="004A0C29" w:rsidRDefault="007045CD" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="0749420E" w14:textId="77777777" w:rsidR="007045CD" w:rsidRPr="004A0C29" w:rsidRDefault="00BB5BD0" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/></w:pPr><w:r w:rsidRPr="004A0C29"><w:t>Vũ Khúc
+TỬ TỨC
+Tuất
+<w:tc><w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="18A21D1F" w14:textId="77777777" w:rsidR="007045CD" w:rsidRPr="004A0C29" w:rsidRDefault="007045CD" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/></w:pPr><w:r w:rsidRPr="004A0C29"><w:t xml:space="preserve">Tử 
+V
+i
+Thiên Phủ
+PHỤ MẪU
+Dần
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="30CD6C41" w14:textId="77777777" w:rsidR="00C53788" w:rsidRDefault="007045CD" w:rsidP="00C53788"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t xml:space="preserve">Thiên 
+C
+ơ
+MỆNH
+Sửu
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="5D536659" w14:textId="46B0670C" w:rsidR="00C53788" w:rsidRDefault="00201B2A" w:rsidP="00C53788"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Phá Quân
+HUYNH ĐỆ
+Tý
+<w:tcPr><w:tcW w:w="2254" w:type="dxa"/></w:tcPr><w:p w14:paraId="71C774C2" w14:textId="77777777" w:rsidR="007045CD" w:rsidRDefault="00D559DA" w:rsidP="00127AB4"><w:pPr><w:jc w:val="center"/><w:rPr><w:lang w:val="en-US"/></w:rPr></w:pPr><w:r><w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Thái Dương
+PHU THÊ
+Hợi
+1. An cung MỆNH và THÂN
+Giả sử: 
+Sinh ngày 02/07/2004 ÂM LỊCH
+ giờ Mùi
+Bắt đầu tại 
+DẦN
+, đếm theo tháng sinh
+ (tháng 7): Dần 1 , Mão 2,…. Thân 7. 
+Lấy gốc tại Thân. An Mệnh:
+ từ gốc thân, đếm ngược chiều kim đồng hồ sao cho đến giờ sinh: Thân – Tý, Mùi – Sửu,…..
+ Sửu – Mùi =&gt; Mệnh an tại Sửu. An THÂN 
+đếm 
+theo chiều kim đồng hồ tương tự: Thân – Tý, Dậu – Sửu,… Mão – Mùi
+ 
+=&gt;  Thân an tại Mão
+2. An các cung còn lại: Theo chiều kim đồng hồ:
+Mệnh 
+ Phụ Mẫu
+ 
+ Phúc Đức 
+ Điền Trạch 
+ 
+Quan L
+ộc
+ 
+ Nô Bộc 
+ Thiên Di 
+ Tật Ách 
+ 
+Tài B
+ạch
+ 
+ 
+Tử Tức 
+ Phu Thê 
+ Huynh Đệ
+Quy tắc nhớ:
+Theo chiều kim đồng hồ
+Mệnh là bản thân mình
+Phụ Mẫu sinh ra mình nên đứng trước mệnh
+Phúc Đức là ông bà tổ tiên 
+sinh ra Phụ Mẫu
+Điền trạch là đất đai nơi ông bà tổ tiên ở
+Quan Lộc là điều kiện  để tạo ra cơ ngơi, đất đai
+Nô Bộc là khi thăng quan tiến chức, làm công danh ắt phải có người xung quanh
+Thiên Di là muốn gặp những người xung quanh thì phải đi ra xã hội
+Tật Ách xảy ra khi chúng ta bôn ba ngoài xã hội nhiều
+Tài Bạch
+ là tiền tài ắt thu được sau khi trải qua được bệnh tật, ách nạn
+Xét về phía ngược lại chiều kim đồng hồ
+Trong gia đình 1 bên là cha mẹ 1 bên là Huynh đệ
+Sau này khi lớn, Huynh đệ tách nhau ra thì chúng ta sống với Phu Thê
+Tử tức là con cái sinh ra sau khi cưới vợ/chồng
+Hoặc có thể nhớ theo vị trí xung đối
+<w:t>Mệnh – Thiên Di: mệnh là con người thật bên trong, Di là con người biểu hiện ra ngoài xã hội
+<w:t>Phụ Mẫu – Tật Ách: cha mẹ sinh ra mình, sức khỏe bệnh tật có tính di truyền từ cha mẹ sang con cái
+<w:t xml:space="preserve">Phúc Đức – Tài Bạch: 
+có Phúc (phúc đức) mới sinh ra Phần (tiền tài)
+<w:t>Điền Trạch – Tử Tức: cả đời làm việc mua nhà mua đất cũng để cho con cái
+<w:t>Quan Lộc – Phu Thê: Phía sau công danh sự nghiệp của một người luôn có bóng dáng của người bạn đời
+<w:t>Nô bộc – Huynh Đệ: Anh em trong nhà vs Anh em xã hội
+3. 
+An
+ chính tinh
+3.1 
+An
+ sao Tử Vi
+ 
+Tính: 
+Ngày sinh Âm Lịch / Cục
+, nếu lẻ làm tròn lên. 
+(cục xem sách để biết bản thân thuộc gì)
+Ví dụ sinh 2004 =&gt; Thủy
+Danh sách cục: thủy = 2; mộc = 3; kim = 4; thổ = 5, hỏa = 6.
+Ví dụ sinh ngày 2 âm, mệnh Thủy =&gt; tính 2/2 = 1
+Ví dụ sinh ngày 10 âm, mệnh mộc =&gt; tính 10/3 = 3.333 làm tròn lên 4
+An
+ sao Tử Vi: bắt đầu tại Dần là 1, đếm đến số vừa tính sẽ xác định được tử vi ở đâu.
+<w:t>Ví dụ: 1 =&gt; Tử Vi tại Dần
+<w:t>Ví dụ: 4 =&gt; Tử Vi cư Tỵ
+3.2 An các chính tinh còn lại
+Để an được các chính tinh còn lại, cần
+ biết khái niệm xung đối, nhị hợp, lục xung và tam hợp
+ (tất cả tổ hợp đều xếp theo 
+chiều thuận kim đồng hồ)
+a) Tam hợp
+: 1 cung sẽ tam hợp với các cung cách nó 4 cung, nhìn lên lá số =&gt; dễ thấy
+ Dần Ngọ Tuất, Mão Mùi Hợi
+, Thân Tý Thìn, Tỵ Dậ
+u
+ Sửu
+b) 
+Xung đối: Là các cung đối xứng qua trung tâm lá số: Ví dụ: Tý Ngọ, Sửu Mùi, Tỵ Hợi
+, Dần Thân, Mão Dậu, Thìn Tuất
+c) Nhị hợp
+: đối xứng theo chiều ngang
+ trên lá số: ví dụ: Thìn Dậu, Mão 
+Tuất,…
+d) Lục Xung: 2 cung đối xứng theo chiều dọc: ví dụ: Ngọ Sửu, Mùi Tý
+Dựa vào vị trí sao tử vi, an các sao như sau:
+1. Cự Môn: tử vi là ông vua =&gt; rất sợ thị phi, quan 
+nịnh thần =&gt; Lục xung cự môn
+2. Thiên Cơ: Phía sau Tử Vi luôn là Thiên Cơ tư vấn chuyên môn
+3
++4
+. 
+Liêm Trinh, Vũ Khúc: 
+Vòng Vũ Tử Liêm
+ (vũ khúc – tử vi – liêm trinh)
+ (theo chiều kim đồng hồ) thuộc tam hợp, 
+an
+ theo tam hợp
+5
+. Thiên Tướng: là quan võ, lục xung với Thiên Cơ: Quan võ luôn không hợp quan văn
+6
+. Phá quân: luôn xung đối với thiên tướng
+ (đồng thời nhị hợp với 
+Thiên Cơ, phá quân là ông vua thời kỳ trước, nên thiên cơ sẽ chơi với ông vua này)
+7+8
+.
+ Thất Sát, Tham Lang 
+an
+ theo vòng Sát Phá Tham
+ 
+(thất sát – phá quân – tham lang) thuộc tam hợp
+9. 
+Thái Âm là người thích tiền =&gt; hợp với Vũ Khúc là người giàu, nhiều tiền nên nhị hợp
+10. 
+Thiên Lương: là người lương thiện =&gt; Nhị hợp với liêm trinh là tượng trưng cho pháp luật
+11. 
+Thái Dương: 
+Thái Dương là người giỏi, người giỏi ganh đua đố kỵ với người giỏi khác là Thất Sát nên 2 cung này lục xung
+12. Thiên Phủ: người giỏi có công danh là Thái Dương nên cũng có cơ ngơi, phủ
+, do đó Thái Dương nhị hợp Thiên Phủ
+13. Thiên Đồng: nhị hợp với Tham Lang do 2 người này đều mê tín bậc nhất trong khoa Tử Vi
