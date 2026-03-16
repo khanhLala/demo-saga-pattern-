@@ -1,6 +1,6 @@
 # Hướng Dẫn Chạy Demo Orchestration Pattern
 
-###Chạy 3 Services
+### Chạy 3 Services
 Bật các terminal riêng biệt cho mỗi service và chạy lệnh (hoặc Run trong IDE):
 
 - **Order Service (Orchestrator - Port 8081)**:
