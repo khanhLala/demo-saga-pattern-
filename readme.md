@@ -1,10 +1,4 @@
 # Saga Pattern: Orchestration & Choreography
-
-(Phần gạch chân là phần ý chính để vào slide)  
-
-**Lưu ý trang bìa:** Ghi tên chủ đề là: Saga Pattern: Orchestration & Choreography  
-**Thành viên:** Đặng Quốc Khánh (B22DCCN444) và Nguyễn Thế Lâm (tự ghi MSV vào)
-
 ---
 
 ## 1. Bối cảnh ra đời của Saga Pattern
