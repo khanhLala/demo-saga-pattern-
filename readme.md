@@ -140,6 +140,11 @@ Ví dụ luồng hoạt động với 3 service: Order, Inventory và Payment, x
 | **Theo dõi tiến độ** | Ngay trong log/CSDL của orchestrator | Phải truy vết theo từng service |
 | **Khả năng mở rộng** | Trung bình, do phải sửa code trong orchestrator | Dễ dàng do chỉ cần lắng nghe sự kiện chứ không phụ thuộc vào service khác |
 
+### Slide 15: Một số vấn đề của Saga Pattern
+- Vấn đề Dual-Write Problem: ví dụ: khách hàng truy cập vào /orders để tạo đơn hàng, đơn hàng đã được lưu trong DB nhưng khi muốn gửi lên message broker (với choreography) hay tiếp tục gọi API đến inventory-service (với orchestration) thì order-service bị sập, do đó đơn hàng mãi bị treo trong DB ở trạng thái pending, hay khi đã trừ kho nhưng thanh toán không thành công rồi thì inventory-service bị sập làm cho việc hoàn hàng không thể thực hiện. Để giải quyết vấn đề này, chúng ta có thể sử dụng Outbox Pattern, một kỹ thuật nhằm lưu các lệnh vào 1 bảng trong cùng DB với order-service để lưu lệnh / sự kiện cần phải thực hiện. Sau đó sử dụng tiến trình chạy ngầm chuyên đi đọc và xử lý các lệnh hoặc sự kiện trong bảng này. Về vấn đề làm rõ hơn về Outbox pattern sẽ dành cho các nhóm khác thuyết trình
+- Giao dịch bù trừ bị lỗi: Hiện tại chúng ta đang giả định việc thực hiện các transaction bù trừ luôn thành công. Tuy nhiên trong thực tế, có thể việc bù trừ này vẫn gặp lỗi, retry nhiều lần không thành công, làm cho đơn hàng bị treo. Để xử lý vấn đề này, chúng ta có thể dùng Dead Letter Queue (hàng đợi thư chết) sau đó gửi cảnh báo đến quản trị viên để rà soát, can thiệp, kiểm tra và xử lý
+- Khó debug và test: Điểm yếu này chúng ta đã nhắc đến ở trên khi nói về choreography, các log xử lý nằm lẻ tẻ ở từng service. Để xử lý vấn đề này, chúng ta có thể sử dụng các kỹ thuật truy vết phân tán theo TraceID (hay transactionId như ở trên) kèm theo các công cụ giám sát. Chúng ta sẽ chỉ cần nhập mã định danh của transaction để xem đường đi của gói tin để bắt lỗi dễ dàng
+
 ---
 
 ## 4. So sánh và lựa chọn các mẫu thiết kế
