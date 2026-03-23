@@ -15,7 +15,7 @@
 *End slide 1*
 
 ### Slide 2: 1.2 Transaction trong kiến trúc microservices
-- Trong kiến trúc microservices, mỗi yêu cầu (request) thường đi qua nhiều service khác nhau, mỗi service có DB riêng, nghĩa là request đi đến service A, service A thực hiện thành công, lưu vào DB của A rồi mới tiếp tục thực hiện service B. (yêu cầu hình ảnh sơ đồ kiểu: service A có DB A, service B có DB B…)
+- Trong kiến trúc microservices, mỗi yêu cầu (request) thường đi qua nhiều service khác nhau, mỗi service có DB riêng, nghĩa là request đi đến service A, service A thực hiện thành công, lưu vào DB của A rồi mới tiếp tục thực hiện service B. Nó được gọi là giao dịch phân tán (distributed transaction) (yêu cầu hình ảnh sơ đồ kiểu: service A có DB A, service B có DB B…)
 - Tính nguyên tử (atomicity), tính nhất quán (consistency) và tính cô lập (isolation) bị phá vỡ:
     - **Tính nguyên tử bị phá vỡ:** Khi một hành động thực hiện nhưng gặp lỗi, ví dụ: service A thực hiện thành công => DB của A lưu dữ liệu, nhưng đến service B bị lỗi thì DB của A không tự động rollback lại dữ liệu như ban đầu được.
     - **Tính nhất quán bị phá vỡ:** Nhưng từ nhất quán mạnh trở thành nhất quán cuối cùng: Service A thực hiện xong hành động, lưu vào DB của A, dữ liệu đã thay đổi mặc dù chuỗi transaction chưa thực hiện xong.
@@ -128,12 +128,12 @@ Ví dụ luồng hoạt động với 3 service: Order, Inventory và Payment, x
 - **Nhược điểm:**
     - Khó debug và test (do events phân tán, không có nơi nào lưu lại toàn bộ vòng đời của transaction từ A-Z).
     - Phức tạp trong việc đảm bảo thứ tự sự kiện. Ví dụ: luồng hoạt động ở trên bị lỗi ở chỗ Payment, thì kho vừa hoàn hàng, order vừa cập nhật thành FAILED, phải bảo đảm được kho hoàn hàng xong thì order mới FAILED.
-    - Cần cơ sở hạ tầng công nghệ mạnh (như message broker, hay hệ thống giám sát).
+    - Cần cơ sở hạ tầng công nghệ mạnh (như message broker, hay hệ thống giám sát) dẫn đến khó triển khai.
 
 ### Slide 15: So sánh orchestration và choreography
 | Tiêu chí | Saga Orchestration | Saga Choreography |
 | :--- | :--- | :--- |
-| **Cơ chế hoạt động** | Command driven | Event driven |
+| **Cơ chế hoạt động** | Command based | Event based |
 | **Điều khiển** | Thông qua một orchestrator để điều phối | Phân tán, không có người điều phối |
 | **Giao tiếp** | Thường dùng lệnh đồng bộ như RESTful API / gRPC | Bất đồng bộ thông qua message broker |
 | **Tính độc lập** | Trung bình, orchestrator phải biết được tên, địa chỉ của dịch vụ khác | Không phụ thuộc nhau |
