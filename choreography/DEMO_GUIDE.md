@@ -24,8 +24,8 @@ curl -X POST http://localhost:8081/orders -H "Content-Type: application/json" -d
 - Payment Service trừ tiền -> Ném event `PaymentBilledEvent`.
 - Order Service đổi trạng thái PENDING -> COMPLETED.
 
-### Bước 5: Test luồng Thất Bại (Hiệu ứng Domino ngược / Compensation)
-Trong demo, tôi đã code logic giả lập: **nếu quantity = 999 thì Payment tài khoản sẽ không đủ tiền (FAILED)**.
+### Bước 5: Test luồng Thất Bại
+Logic giả lập: **nếu quantity = 999 thì Payment tài khoản sẽ không đủ tiền (FAILED)**.
 ```bash
 curl -X POST http://localhost:8081/orders -H "Content-Type: application/json" -d "{\"productId\": 1, \"quantity\": 999}"
 ```
