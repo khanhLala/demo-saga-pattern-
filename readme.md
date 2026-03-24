@@ -15,7 +15,7 @@
 *End slide 1*
 
 ### Slide 2: 1.2 Transaction trong kiến trúc microservices
-- Trong kiến trúc microservices, mỗi yêu cầu (request) thường đi qua nhiều service khác nhau, mỗi service có DB riêng, nghĩa là request đi đến service A, service A thực hiện thành công, lưu vào DB của A rồi mới tiếp tục thực hiện service B. Nó được gọi là giao dịch phân tán (distributed transaction) (yêu cầu hình ảnh sơ đồ kiểu: service A có DB A, service B có DB B…)
+- Trong kiến trúc microservices, mỗi yêu cầu (request) thường đi qua nhiều service khác nhau, mỗi service có DB riêng, nghĩa là request đi đến service A, service A thực hiện thành công, lưu vào DB của A rồi mới tiếp tục thực hiện service B. Không có một thực thể nào chung để quản lý vòng đời của một transaction. Nó được gọi là giao dịch phân tán (distributed transaction) (yêu cầu hình ảnh sơ đồ kiểu: service A có DB A, service B có DB B…)
 - Tính nguyên tử (atomicity), tính nhất quán (consistency) và tính cô lập (isolation) bị phá vỡ:
     - **Tính nguyên tử bị phá vỡ:** Khi một hành động thực hiện nhưng gặp lỗi, ví dụ: service A thực hiện thành công => DB của A lưu dữ liệu, nhưng đến service B bị lỗi thì DB của A không tự động rollback lại dữ liệu như ban đầu được.
     - **Tính nhất quán bị phá vỡ:** Nhưng từ nhất quán mạnh trở thành nhất quán cuối cùng: Service A thực hiện xong hành động, lưu vào DB của A, dữ liệu đã thay đổi mặc dù chuỗi transaction chưa thực hiện xong.
